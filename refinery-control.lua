@@ -13,13 +13,15 @@ LPG_25PCT_COLOR = colors.lightGray
 LPG_80PCT_COLOR = colors.gray
 
 CONDUIT_LOCATION = "back"
+MODEM_LOCATION = "left"
+PRESSURE_GAUGE_LOCATION = "top"
 
-MODEM_LOCATION = "top"
 REFINERY_CHAN = 10
 LUBRICANT_CHAN = 20
 KEROSENE_CHAN = 22
 GASOLINE_CHAN = 24
 LPG_CHAN = 26
+COMPRESSOR_CHAN = 30
 
 -- Init
 print("Starting... Hold Ctrl + T to terminate")
@@ -35,6 +37,8 @@ diesel_to_kerosene_active = false
 kerosene_to_gasoline_active = false
 gasoline_to_lpg_active = false
 
+compressor_active = false
+
 modem = peripheral.wrap(MODEM_LOCATION)
 
 -- Loop
@@ -47,6 +51,7 @@ while true do
   local gasoline_full = colors.test(redstone.getBundledInput(CONDUIT_LOCATION), GASOLINE_80PCT_COLOR)
   local lpg_crit = not(colors.test(redstone.getBundledInput(CONDUIT_LOCATION), LPG_25PCT_COLOR))
   local lpg_full = colors.test(redstone.getBundledInput(CONDUIT_LOCATION), LPG_80PCT_COLOR)
+  local pressure_gauge_cur = redstone.getAnalogInput(PRESSURE_GAUGE_LOCATION)
 
   -- Drain Active: if fluid has stored >80%, then active
   -- if stored fluid is <25%, then disable
@@ -99,19 +104,32 @@ while true do
   kerosene_to_gasoline_active = kerosene_drain_active and (not gasoline_full)
   gasoline_to_lpg_active = gasoline_drain_active and (not lpg_full)
 
+  -- Compressor: Active if gauge redstone = 0, Disable if gauge redstone =15
+  if compressor_active then
+    if pressure_gauge_cur == 15 then
+      compressor_active = false
+    end
+    else
+    if pressure_gauge_cur == 0 then
+        compressor_active = false
+    end
+  end
+
   modem.transmit(REFINERY_CHAN, REFINERY_CHAN + 1, refinery_active)
   modem.transmit(LUBRICANT_CHAN, LUBRICANT_CHAN + 1, diesel_to_lubricant_active)
   modem.transmit(KEROSENE_CHAN, KEROSENE_CHAN + 1, diesel_to_kerosene_active)
   modem.transmit(GASOLINE_CHAN, GASOLINE_CHAN + 1, kerosene_to_gasoline_active)
   modem.transmit(LPG_CHAN, LPG_CHAN + 1, gasoline_to_lpg_active)
+  modem.transmiit(COMPRESSOR_CHAN, COMPRESSOR_CHAN + 1, compressor_active)
 
   print("Refinery: ", refinery_active)
   print("Lubricant: ", diesel_to_lubricant_active)
   print("Kerosene: ", diesel_to_kerosene_active)
   print("Gasoline: ", kerosene_to_gasoline_active)
   print("LPG: ", gasoline_to_lpg_active)
+  print("Compressor:", compressor_active)
 
-  os.sleep(10)
+  os.sleep(3)
 
   term.clear()
   print("Hold Ctrl + T to terminate.\n")
