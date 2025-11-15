@@ -109,9 +109,9 @@ while true do
     if pressure_gauge_cur == 15 then
       compressor_active = false
     end
-    else
+  else
     if pressure_gauge_cur == 0 then
-        compressor_active = false
+        compressor_active = true
     end
   end
 
@@ -120,7 +120,7 @@ while true do
   modem.transmit(KEROSENE_CHAN, KEROSENE_CHAN + 1, diesel_to_kerosene_active)
   modem.transmit(GASOLINE_CHAN, GASOLINE_CHAN + 1, kerosene_to_gasoline_active)
   modem.transmit(LPG_CHAN, LPG_CHAN + 1, gasoline_to_lpg_active)
-  modem.transmiit(COMPRESSOR_CHAN, COMPRESSOR_CHAN + 1, compressor_active)
+  modem.transmit(COMPRESSOR_CHAN, COMPRESSOR_CHAN + 1, compressor_active)
 
   print("Refinery: ", refinery_active)
   print("Lubricant: ", diesel_to_lubricant_active)
