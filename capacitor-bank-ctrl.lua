@@ -17,10 +17,11 @@ function loop()
     while true do
         print("Hold Ctrl + T to terminate.\n")
         local _, message = rednet.receive()
-        if message == nil then
-            return
+        while message ~= nil do
+            -- loop until msg queue is empty
+            print("Received message: ", message)
+            local _, message = rednet.receive(1)
         end
-        print("Received message: ", message)
         os.sleep(3)
 
         term.clear()
