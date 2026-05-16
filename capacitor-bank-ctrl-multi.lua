@@ -1,19 +1,20 @@
 -- Config
--- TARGETS: list of {side, color, active(current_pct, current_rf)}.
+-- TARGETS: list of {side, color, active(current_pct, current_rf, direction)}.
+-- direction is "filling", "draining", or "idle" based on RF change since the previous loop.
 -- Multiple entries can share a side; their colors are OR'd into that side's bundled output.
 TARGETS = {
     {
         side = "back",
         color = colors.white,
-        active = function(current_pct, current_rf)
+        active = function(current_pct, current_rf, direction)
             return false
         end,
     },
     -- {
     --     side = "left",
     --     color = colors.red,
-    --     active = function(current_pct, current_rf)
-    --         return current_pct < 0.25
+    --     active = function(current_pct, current_rf, direction)
+    --         return direction == "draining" and current_pct < 0.25
     --     end,
     -- },
 }
@@ -29,15 +30,26 @@ print("Starting... Hold Ctrl + T to terminate")
 modem = rednet.open(MODEM_LOCATION)
 current_pct = 0
 current_rf = 0
+prev_rf = 0
 
 function loop()
     while true do
         print("Hold Ctrl + T to terminate.\n")
 
+        local delta_rf = current_rf - prev_rf
+        local direction
+        if delta_rf > 0 then
+            direction = "filling"
+        elseif delta_rf < 0 then
+            direction = "draining"
+        else
+            direction = "idle"
+        end
+
         local side_output = {}
         local results = {}
         for i, t in ipairs(TARGETS) do
-            local on = t.active(current_pct, current_rf)
+            local on = t.active(current_pct, current_rf, direction)
             results[i] = on
             local prev = side_output[t.side] or 0
             if on then
@@ -53,9 +65,12 @@ function loop()
 
         print("Current Pct: ", current_pct * 100)
         print("Current RF: ", current_rf)
+        print("Direction: ", direction)
         for i, t in ipairs(TARGETS) do
             print(string.format("  %s/%d: %s", t.side, t.color, tostring(results[i])))
         end
+
+        prev_rf = current_rf
 
         local _, message = rednet.receive()
         while message ~= nil do
