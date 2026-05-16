@@ -1,3 +1,18 @@
+-- Helpers
+-- hysteresis(off_below, on_above): returns an active() that latches on/off with hysteresis.
+-- Off when pct drops below off_below; on when pct rises above on_above. Starts off.
+function hysteresis(off_below, on_above)
+    local on = false
+    return function(current_pct, current_rf, direction)
+        if on then
+            if current_pct < off_below then on = false end
+        else
+            if current_pct > on_above then on = true end
+        end
+        return on
+    end
+end
+
 -- Config
 -- TARGETS: list of {side, color, active(current_pct, current_rf, direction)}.
 -- direction is "filling", "draining", or "idle" based on RF change since the previous loop.
@@ -13,9 +28,7 @@ TARGETS = {
     -- {
     --     side = "left",
     --     color = colors.red,
-    --     active = function(current_pct, current_rf, direction)
-    --         return direction == "draining" and current_pct < 0.25
-    --     end,
+    --     active = hysteresis(0.10, 0.90),
     -- },
 }
 
